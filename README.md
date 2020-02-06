@@ -16,7 +16,11 @@ This Ansible role handles setting up Boulder, Certificate Transparency log serve
 
    It's my choice since I want full control of issuing CA subject, and I have an existing root CA, otherwise I would use `step-ca`.
 
-2. Set up CAA records in you DNS first, otherwise Boulder cannot issue certificate to the reverse proxy.
+2. Set up DNS records:
+
+   - sub domain names that serve ACME and OCSP requests, and
+
+   - a CAA record, otherwise Boulder cannot issue certificate to any of your servers.
 
 3. Required Ansible 2.9 and patch with [this commit](https://github.com/ansible/ansible/commit/a0e5e2e4c597c8cf0fdd39c2df45fe33fd38eedb) at the moment otherwise you will encounter failures with `openssl_publickey` module.
 
