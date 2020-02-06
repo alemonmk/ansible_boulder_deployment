@@ -84,9 +84,10 @@ Copy the roles included to your Ansible roles directory, then use as below.
             # use anything > 0 that can be recongize by `to_datetime` filter
             start: 0
             end: 0
-            root: {{ issuing_ca_crtname }}
+            root: '{{ issuing_ca_crtname }}'
         # Required. Provide your resolver *and* port
-        va_resolver: 127.0.0.1:53
+        va_resolvers:
+          - 127.0.0.1:53
         # Required for your custom enviornments.
         ca_policies:
           # Your CAA record should match this value

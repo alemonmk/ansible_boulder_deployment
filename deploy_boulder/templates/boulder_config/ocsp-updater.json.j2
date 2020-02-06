@@ -24,7 +24,7 @@
       "timeout": "15s"
     },
     "features": {
-{% for k, v in app_conf.ocsp-updater.features.items() %}
+{% for k, v in app_conf.ocsp_updater.features.items() %}
       "{{ k }}": {{ v | lower }}{{ ',' if not loop.last else '' }}
 {% endfor %}
     }

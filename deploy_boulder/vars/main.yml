@@ -45,8 +45,7 @@ app_conf:
   va:
     network:
       grpc: 3531
-      dns_resolvers:
-        - {{ va_resolver }}
+      dns_resolvers: '{{ va_resolvers }}'
     features:
       CAAAccountURI: true
       CAAValidationMethods: true
