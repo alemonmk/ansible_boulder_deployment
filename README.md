@@ -34,6 +34,8 @@ This Ansible role handles setting up Boulder, Certificate Transparency log serve
 
    - for Validation Authority to resolve your internal names.
 
+7. Need root access on target machine. Read all the tasks before you run the play.
+
 ## Usage
 
 Copy the roles included to your Ansible roles directory, then use as below.
