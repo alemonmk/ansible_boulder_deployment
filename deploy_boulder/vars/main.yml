@@ -1,0 +1,92 @@
+---
+trillian_apps:
+  - trillian_log_server
+  - trillian_log_signer
+  - createtree
+  - deletetree
+  - updatetree
+
+boulder_apps:
+  - boulder-ca
+  - boulder-ra
+  - boulder-va
+  - boulder-sa
+  - boulder-publisher
+  - nonce-service
+  - boulder-wfe2
+  - ocsp-updater
+  - ocsp-responder
+  - orphan-finder
+  - admin-revoker
+  - boulder-janitor
+  - expired-authz-purger2
+  - block-a-key
+  - weak-key-flatten
+
+trillian_log_server_grpc: 4001
+trillian_log_signer_grpc: 4002
+ctfe_server_http: 4011
+
+app_conf:
+  ca:
+    network:
+      grpc:
+        ca: 3501
+        ocsp: 3502
+    features:
+      StoreIssuerInfo: true
+  ra:
+    network:
+      grpc: 3511
+    features:
+      CheckRenewalFirst: true
+      ParallelCheckFailedValidation: false
+      V1DisableNewValidations: true
+  va:
+    network:
+      grpc: 3531
+      dns_resolvers:
+        - {{ va_resolver }}
+    features:
+      CAAAccountURI: true
+      CAAValidationMethods: true
+      MultiVAFullResults: false
+      EnforceMultiVA: false
+  sa:
+    network:
+      grpc: 3521
+    db_user: boulder_sasvc
+    features:
+      DeleteUnusedChallenges: true
+      StoreIssuerInfo: true
+      WriteIssuedNamesPrecert: false
+  publisher:
+    network:
+      grpc: 3512
+  nonce:
+    network:
+      grpc: 3541
+  wfe2:
+    network:
+      http: 3601
+      https: 0
+    features:
+      HeadNonceStatusOK: true
+      RemoveWFE2AccountID: true
+      StripDefaultSchemePort: true
+      MandatoryPOSTAsGET: true
+      PrecertificateRevocation: true
+  ocsp_updater:
+    features:
+      StoreIssuerInfo: true
+    db_user: boulder_ocspupd
+  ocsp_responder:
+    network:
+      http: 3602
+    db_user: boulder_ocspresp
+  admin_revoker:
+    db_user: boulder_revoker
+  janitor:
+    db_user: boulder_janitor
+  expired_authz_purger2:
+    db_user: boulder_purger

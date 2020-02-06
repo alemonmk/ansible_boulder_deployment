@@ -1,0 +1,36 @@
+{
+  "sa": {
+    "dbConnectFile": "config/dburl/boulder-sa",
+    "maxDBConns": 100,
+    "maxConcurrentRPCServerRequests": 10000,
+    "ParallelismPerRPC": 20,
+    "debugAddr": "127.0.0.1:9994",
+    "tls": {
+      "caCertFile": "certs/grpc/ca.crt",
+      "certFile": "certs/grpc/boulder-sa.crt",
+      "keyFile": "certs/grpc/boulder-sa.key"
+    },
+    "grpc": {
+      "address": "127.0.0.1:{{ app_conf.sa.network.grpc }}",
+      "clientNames": [
+        "admin-revoker.{{ ansible_fqdn }}",
+        "boulder-ca.{{ ansible_fqdn }}",
+        "ocsp-updater.{{ ansible_fqdn }}",
+        "orphan-finder.{{ ansible_fqdn }}",
+        "boulder-ra.{{ ansible_fqdn }}",
+        "boulder-sa.{{ ansible_fqdn }}",
+        "boulder-wfe2.{{ ansible_fqdn }}"
+      ]
+    },
+    "features": {
+{% for k, v in app_conf.sa.features.items() %}
+      "{{ k }}": {{ v | lower }}{{ ',' if not loop.last else '' }}
+{% endfor %}
+    }
+  },
+
+  "syslog": {
+    "stdoutlevel": 6,
+    "sysloglevel": 4
+  }
+}

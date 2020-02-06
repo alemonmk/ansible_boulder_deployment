@@ -1,0 +1,44 @@
+{
+  "va": {
+    "userAgent": "boulder verfication agent",
+    "debugAddr": "127.0.0.1:9995",
+    "maxConcurrentRPCServerRequests": 10000,
+    "dnsTries": 3,
+    "dnsResolvers": [
+{% for resolver in app_conf.va.network.dns_resolvers %}
+      "{{ resolver }}"{{ ',' if not loop.last else '' }}
+{% endfor %}
+    ],
+    "issuerDomain": "{{ ca_policies.caa_domain }}",
+    "tls": {
+      "caCertFile": "certs/grpc/ca.crt",
+      "certFile": "certs/grpc/boulder-va.crt",
+      "keyFile": "certs/grpc/boulder-va.key"
+    },
+    "grpc": {
+      "address": "127.0.0.1:{{ app_conf.va.network.grpc }}",
+      "maxConcurrentStreams": 2000,
+      "clientNames": [
+        "boulder-ra.{{ ansible_fqdn }}"
+      ]
+    },
+    "features": {
+{% for k, v in app_conf.va.features.items() %}
+      "{{ k }}": {{ v | lower }}{{ ',' if not loop.last else '' }}
+{% endfor %}
+    },
+    "accountURIPrefixes": [
+      "http://{{ exposed_api_domain }}/acme/acct"
+    ]
+  },
+
+  "syslog": {
+    "stdoutlevel": 6,
+    "sysloglevel": 4
+  },
+
+  "common": {
+    "dnsTimeout": "1s",
+    "dnsAllowLoopbackAddresses": true
+  }
+}

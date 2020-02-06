@@ -1,0 +1,40 @@
+---
+install_root: /opt/boulder
+src_root: /opt/boulder-src
+current_release: release-2020-02-03
+ct_install_root: /opt/ctgo
+ct_src_root: /opt/ctgo-src
+ct_current_release: tags/v1.1.0
+trillian_install_root: /opt/trillian
+trillian_src_root: /opt/trillian-src
+trillian_current_release: master
+
+ca_svc_user: boulder
+ct_svc_user: ctlog
+trillian_log_db_user: ctlog_oper
+
+ca_database_name: ""
+ctlog_database_name: ""
+db_login_socket: /run/mysqld/mysqld.sock
+
+issuing_ca_crtname: ""
+issuing_ca_keyname: ""
+
+ctlog_sharding: False
+ctlog_shards:
+  - prefix: ""
+    start: 0
+    end: 0
+    root: {{ issuing_ca_crtname }}
+
+ca_policies:
+  caa_domain: ""
+  valid_duration: 2160h
+  cp_oid: 2.5.29.32.0
+  cps_url: ""
+  cp_usernotice: ""
+
+va_resolver: 0.0.0.0:53
+
+exposed_api_domain: pki.example.com
+company_homepage: https://example.com

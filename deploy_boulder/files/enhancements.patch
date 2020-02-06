@@ -1,0 +1,316 @@
+diff --git ca/ca.go ca/ca.go
+index 5a0bebb2..eae89d01 100644
+--- ca/ca.go
++++ ca/ca.go
+@@ -173,11 +173,20 @@ func makeInternalIssuers(
+ 	internalIssuers := make(map[string]*internalIssuer)
+ 	for _, iss := range issuers {
+ 		if iss.Cert == nil || iss.Signer == nil {
+ 			return nil, errors.New("Issuer with nil cert or signer specified.")
+ 		}
+-		eeSigner, err := local.NewSigner(iss.Signer, iss.Cert, x509.SHA256WithRSA, policy)
++		var sigalgo x509.SignatureAlgorithm
++		switch iss.Cert.PublicKey.(type) {
++		case *rsa.PublicKey:
++			sigalgo = x509.SHA256WithRSA
++		case *ecdsa.PublicKey:
++			sigalgo = x509.ECDSAWithSHA384
++		default:
++			sigalgo = x509.UnknownSignatureAlgorithm
++		}
++		eeSigner, err := local.NewSigner(iss.Signer, iss.Cert, sigalgo, policy)
+ 		if err != nil {
+ 			return nil, err
+ 		}
+ 
+ 		cn := iss.Cert.Subject.CommonName
+diff --git cmd/boulder-ra/main.go cmd/boulder-ra/main.go
+index 535b3035..a543b9e9 100644
+--- cmd/boulder-ra/main.go
++++ cmd/boulder-ra/main.go
+@@ -5,11 +5,10 @@ import (
+ 	"flag"
+ 	"fmt"
+ 	"os"
+ 	"time"
+ 
+-	akamaipb "github.com/letsencrypt/boulder/akamai/proto"
+ 	caPB "github.com/letsencrypt/boulder/ca/proto"
+ 	"github.com/letsencrypt/boulder/cmd"
+ 	"github.com/letsencrypt/boulder/core"
+ 	"github.com/letsencrypt/boulder/ctpolicy"
+ 	"github.com/letsencrypt/boulder/ctpolicy/ctconfig"
+@@ -35,11 +34,10 @@ type config struct {
+ 
+ 		SAService           *cmd.GRPCClientConfig
+ 		VAService           *cmd.GRPCClientConfig
+ 		CAService           *cmd.GRPCClientConfig
+ 		PublisherService    *cmd.GRPCClientConfig
+-		AkamaiPurgerService *cmd.GRPCClientConfig
+ 
+ 		MaxNames     int
+ 		DoNotForceCN bool
+ 
+ 		// Controls behaviour of the RA when asked to create a new authz for
+@@ -154,15 +152,11 @@ func main() {
+ 	var ctp *ctpolicy.CTPolicy
+ 	conn, err := bgrpc.ClientSetup(c.RA.PublisherService, tlsConfig, clientMetrics, clk)
+ 	cmd.FailOnError(err, "Failed to load credentials and create gRPC connection to Publisher")
+ 	pubc := bgrpc.NewPublisherClientWrapper(pubPB.NewPublisherClient(conn))
+ 
+-	var apc akamaipb.AkamaiPurgerClient
+ 	var issuerCert *x509.Certificate
+-	apConn, err := bgrpc.ClientSetup(c.RA.AkamaiPurgerService, tlsConfig, clientMetrics, clk)
+-	cmd.FailOnError(err, "Unable to create a Akamai Purger client")
+-	apc = akamaipb.NewAkamaiPurgerClient(apConn)
+ 
+ 	issuerCert, err = core.LoadCert(c.RA.IssuerCertPath)
+ 	cmd.FailOnError(err, "Failed to load issuer certificate")
+ 
+ 	// Boulder's components assume that there will always be CT logs configured.
+@@ -224,11 +218,10 @@ func main() {
+ 		pendingAuthorizationLifetime,
+ 		pubc,
+ 		caaClient,
+ 		c.RA.OrderLifetime.Duration,
+ 		ctp,
+-		apc,
+ 		issuerCert,
+ 	)
+ 
+ 	policyErr := rai.SetRateLimitPoliciesFile(c.RA.RateLimitPoliciesFilename)
+ 	cmd.FailOnError(policyErr, "Couldn't load rate limit policies file")
+diff --git cmd/ocsp-updater/main.go cmd/ocsp-updater/main.go
+index b0089d64..fc0a16dc 100644
+--- cmd/ocsp-updater/main.go
++++ cmd/ocsp-updater/main.go
+@@ -9,11 +9,10 @@ import (
+ 	"fmt"
+ 	"os"
+ 	"time"
+ 
+ 	"github.com/jmhodges/clock"
+-	akamaipb "github.com/letsencrypt/boulder/akamai/proto"
+ 	capb "github.com/letsencrypt/boulder/ca/proto"
+ 	"github.com/letsencrypt/boulder/cmd"
+ 	"github.com/letsencrypt/boulder/core"
+ 	"github.com/letsencrypt/boulder/db"
+ 	"github.com/letsencrypt/boulder/features"
+@@ -59,11 +58,10 @@ type OCSPUpdater struct {
+ 	ocspStaleMaxAge time.Duration
+ 	// Maximum number of individual OCSP updates to attempt in parallel. Making
+ 	// these requests in parallel allows us to get higher total throughput.
+ 	parallelGenerateOCSPRequests int
+ 
+-	purgerService akamaipb.AkamaiPurgerClient
+ 	// issuer is used to generate OCSP request URLs to purge
+ 	issuer *x509.Certificate
+ 
+ 	genStoreHistogram prometheus.Histogram
+ 	generatedCounter  *prometheus.CounterVec
+@@ -74,11 +72,10 @@ func newUpdater(
+ 	stats prometheus.Registerer,
+ 	clk clock.Clock,
+ 	dbMap ocspDB,
+ 	ogc capb.OCSPGeneratorClient,
+ 	sac core.StorageAuthority,
+-	apc akamaipb.AkamaiPurgerClient,
+ 	config OCSPUpdaterConfig,
+ 	issuerPath string,
+ 	log blog.Logger,
+ ) (*OCSPUpdater, error) {
+ 	if config.OldOCSPBatchSize == 0 {
+@@ -124,28 +121,25 @@ func newUpdater(
+ 		log:                          log,
+ 		sac:                          sac,
+ 		ocspMinTimeToExpiry:          config.OCSPMinTimeToExpiry.Duration,
+ 		ocspStaleMaxAge:              config.OCSPStaleMaxAge.Duration,
+ 		parallelGenerateOCSPRequests: config.ParallelGenerateOCSPRequests,
+-		purgerService:                apc,
+ 		genStoreHistogram:            genStoreHistogram,
+ 		generatedCounter:             generatedCounter,
+ 		storedCounter:                storedCounter,
+ 		tickHistogram:                tickHistogram,
+ 		tickWindow:                   config.OldOCSPWindow.Duration,
+ 		batchSize:                    config.OldOCSPBatchSize,
+ 		maxBackoff:                   config.SignFailureBackoffMax.Duration,
+ 		backoffFactor:                config.SignFailureBackoffFactor,
+ 	}
+ 
+-	if updater.purgerService != nil {
+-		issuer, err := core.LoadCert(issuerPath)
+-		if err != nil {
+-			return nil, err
+-		}
+-		updater.issuer = issuer
++	issuer, err := core.LoadCert(issuerPath)
++	if err != nil {
++		return nil, err
+ 	}
++	updater.issuer = issuer
+ 
+ 	return &updater, nil
+ }
+ 
+ func (updater *OCSPUpdater) findStaleOCSPResponses(oldestLastUpdatedTime time.Time, batchSize int) ([]core.CertificateStatus, error) {
+@@ -348,32 +342,22 @@ type OCSPUpdaterConfig struct {
+ 
+ 	OCSPMinTimeToExpiry          cmd.ConfigDuration
+ 	OCSPStaleMaxAge              cmd.ConfigDuration
+ 	ParallelGenerateOCSPRequests int
+ 
+-	AkamaiBaseURL           string
+-	AkamaiClientToken       string
+-	AkamaiClientSecret      string
+-	AkamaiAccessToken       string
+-	AkamaiV3Network         string
+-	AkamaiPurgeRetries      int
+-	AkamaiPurgeRetryBackoff cmd.ConfigDuration
+-
+ 	SignFailureBackoffFactor float64
+ 	SignFailureBackoffMax    cmd.ConfigDuration
+ 
+ 	SAService            *cmd.GRPCClientConfig
+ 	OCSPGeneratorService *cmd.GRPCClientConfig
+-	AkamaiPurgerService  *cmd.GRPCClientConfig
+ 
+ 	Features map[string]bool
+ }
+ 
+ func setupClients(c OCSPUpdaterConfig, stats prometheus.Registerer, clk clock.Clock) (
+ 	capb.OCSPGeneratorClient,
+ 	core.StorageAuthority,
+-	akamaipb.AkamaiPurgerClient,
+ ) {
+ 	var tls *tls.Config
+ 	var err error
+ 	if c.TLS.CertFile != nil {
+ 		tls, err = c.TLS.Load()
+@@ -386,18 +370,11 @@ func setupClients(c OCSPUpdaterConfig, stats prometheus.Registerer, clk clock.Cl
+ 
+ 	saConn, err := bgrpc.ClientSetup(c.SAService, tls, clientMetrics, clk)
+ 	cmd.FailOnError(err, "Failed to load credentials and create gRPC connection to SA")
+ 	sac := bgrpc.NewStorageAuthorityClient(sapb.NewStorageAuthorityClient(saConn))
+ 
+-	var apc akamaipb.AkamaiPurgerClient
+-	if c.AkamaiPurgerService != nil {
+-		apcConn, err := bgrpc.ClientSetup(c.AkamaiPurgerService, tls, clientMetrics, clk)
+-		cmd.FailOnError(err, "Failed to load credentials and create gRPC connection to Akamai Purger service")
+-		apc = akamaipb.NewAkamaiPurgerClient(apcConn)
+-	}
+-
+-	return ogc, sac, apc
++	return ogc, sac
+ }
+ 
+ func (updater *OCSPUpdater) tick() {
+ 	start := updater.clk.Now()
+ 	err := updater.updateOCSPResponses(context.Background(), updater.batchSize)
+@@ -452,19 +429,18 @@ func main() {
+ 
+ 	// Collect and periodically report DB metrics using the DBMap and prometheus stats.
+ 	sa.InitDBMetrics(dbMap, stats)
+ 
+ 	clk := cmd.Clock()
+-	ogc, sac, apc := setupClients(conf, stats, clk)
++	ogc, sac := setupClients(conf, stats, clk)
+ 
+ 	updater, err := newUpdater(
+ 		stats,
+ 		clk,
+ 		dbMap,
+ 		ogc,
+ 		sac,
+-		apc,
+ 		// Necessary evil for now
+ 		conf,
+ 		c.Common.IssuerCert,
+ 		logger,
+ 	)
+diff --git ra/ra.go ra/ra.go
+index fbdf7a4b..72eab6da 100644
+--- ra/ra.go
++++ ra/ra.go
+@@ -13,12 +13,10 @@ import (
+ 	"strconv"
+ 	"strings"
+ 	"time"
+ 
+ 	"github.com/jmhodges/clock"
+-	"github.com/letsencrypt/boulder/akamai"
+-	akamaipb "github.com/letsencrypt/boulder/akamai/proto"
+ 	caPB "github.com/letsencrypt/boulder/ca/proto"
+ 	"github.com/letsencrypt/boulder/core"
+ 	corepb "github.com/letsencrypt/boulder/core/proto"
+ 	csrlib "github.com/letsencrypt/boulder/csr"
+ 	"github.com/letsencrypt/boulder/ctpolicy"
+@@ -74,11 +72,10 @@ type RegistrationAuthorityImpl struct {
+ 	forceCNFromSAN               bool
+ 	reuseValidAuthz              bool
+ 	orderLifetime                time.Duration
+ 
+ 	issuer *x509.Certificate
+-	purger akamaipb.AkamaiPurgerClient
+ 
+ 	ctpolicy *ctpolicy.CTPolicy
+ 
+ 	ctpolicyResults         *prometheus.HistogramVec
+ 	rateLimitCounter        *prometheus.CounterVec
+@@ -103,11 +100,10 @@ func NewRegistrationAuthorityImpl(
+ 	pendingAuthorizationLifetime time.Duration,
+ 	pubc core.Publisher,
+ 	caaClient caaChecker,
+ 	orderLifetime time.Duration,
+ 	ctp *ctpolicy.CTPolicy,
+-	purger akamaipb.AkamaiPurgerClient,
+ 	issuer *x509.Certificate,
+ ) *RegistrationAuthorityImpl {
+ 	ctpolicyResults := prometheus.NewHistogramVec(
+ 		prometheus.HistogramOpts{
+ 			Name:    "ctpolicy_results",
+@@ -175,11 +171,10 @@ func NewRegistrationAuthorityImpl(
+ 		publisher:                    pubc,
+ 		caa:                          caaClient,
+ 		orderLifetime:                orderLifetime,
+ 		ctpolicy:                     ctp,
+ 		ctpolicyResults:              ctpolicyResults,
+-		purger:                       purger,
+ 		issuer:                       issuer,
+ 		namesPerCert:                 namesPerCert,
+ 		rateLimitCounter:             rateLimitCounter,
+ 		newRegCounter:                newRegCounter,
+ 		reusedValidAuthzCounter:      reusedValidAuthzCounter,
+@@ -1691,12 +1686,12 @@ func revokeEvent(state, serial, cn string, names []string, revocationCode revoca
+ 		names,
+ 		revocation.ReasonToString[revocationCode],
+ 	)
+ }
+ 
+-// revokeCertificate generates a revoked OCSP response for the given certificate, stores
+-// the revocation information, and purges OCSP request URLs from Akamai.
++// revokeCertificate generates a revoked OCSP response for the given certificate and
++// stores the revocation information.
+ func (ra *RegistrationAuthorityImpl) revokeCertificate(ctx context.Context, cert x509.Certificate, code revocation.Reason) error {
+ 	status := string(core.OCSPStatusRevoked)
+ 	reason := int32(code)
+ 	revokedAt := time.Now().UnixNano()
+ 	ocspResponse, err := ra.CA.GenerateOCSP(ctx, &caPB.GenerateOCSPRequest{
+@@ -1719,18 +1714,10 @@ func (ra *RegistrationAuthorityImpl) revokeCertificate(ctx context.Context, cert
+ 		Response: ocspResponse.Response,
+ 	})
+ 	if err != nil {
+ 		return err
+ 	}
+-	purgeURLs, err := akamai.GeneratePurgeURLs(cert.Raw, ra.issuer)
+-	if err != nil {
+-		return err
+-	}
+-	_, err = ra.purger.Purge(ctx, &akamaipb.PurgeRequest{Urls: purgeURLs})
+-	if err != nil {
+-		return err
+-	}
+ 
+ 	return nil
+ }
+ 
+ // RevokeCertificateWithReg terminates trust in the certificate provided.

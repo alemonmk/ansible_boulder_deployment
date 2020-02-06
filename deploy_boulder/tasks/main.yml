@@ -1,0 +1,111 @@
+---
+  - name: Installing golang from testing
+    apt:
+      name: golang
+      default_release: testing
+
+  - name: Stopping services that could be running
+    block:
+      - systemd:
+          name: '{{ item }}'
+          state: stopped
+        loop: '{{ q("fileglob", "../templates/boulder_systemd_units/*.service") 
+          | map("basename") | list }}'
+
+      - systemd:
+          name: '{{ item }}'
+          state: stopped
+        loop:
+          - trillian-log
+          - trillian-signer
+          - ct-frontend
+    ignore_errors: yes
+
+  - name: Getting server softwares
+    include_tasks: 01-getsoftwares.yml
+
+  - name: Configuring boulder
+    include_tasks: 02-boulderconfigs.yml
+
+  - name: Installing Boulder systemd services
+    include_tasks: 03-bouldersystemd.yml
+
+  - name: Organizing issuring CA files
+    include_tasks: 04-cafiles.yml
+
+  - name: Generating gRPC PKI
+    include_tasks: 05-grpcpki.yml
+
+  - name: Installing databases
+    include_tasks: 06-installdatabase.yml
+
+  - name: Setting up Certificate Transparency log server
+    include_tasks: 07-ctlogconfigs.yml
+
+  - name: Fixing CA server permissions - chown
+    file:
+      path: '{{ install_root }}'
+      state: directory
+      recurse: yes
+      owner: '{{ ca_svc_user }}'
+      group: '{{ ca_svc_user }}'
+
+  - name: Fixing CA server permissions - protecting certs
+    file:
+      path: '{{ install_root }}/certs'
+      state: directory
+      recurse: yes
+      mode: ug=rwx,o-rwx
+
+  - name: Fixing CT log server permissions - chown
+    file:
+      path: '{{ ct_install_root }}'
+      state: directory
+      recurse: yes
+      owner: '{{ ct_svc_user }}'
+      group: '{{ ct_svc_user }}'
+
+  - name: Fixing CT log server permissions - protecting private key
+    file:
+      path: '{{ ct_install_root }}/signing_keys'
+      state: directory
+      recurse: yes
+      mode: ug=rwx,o-rwx
+
+  - name: Starting CT log services
+    systemd:
+      name: '{{ item }}'
+      enabled: yes
+      state: started
+    loop:
+      - trillian-log
+      - trillian-signer
+      - ct-frontend
+
+  - name: Starting boulder services
+    systemd:
+      name: '{{ item }}'
+      enabled: yes
+      state: started
+    loop: '{{ q("fileglob", "../templates/boulder_systemd_units/*.service") 
+      | map("basename") | list }}'
+
+  - name: Installing Caddy 2
+    include_role:
+      name: caddy2
+    vars:
+      caddy_file: |
+        {
+          acme_ca http://127.0.0.1:{{ app_conf.wfe2.network.http }}/directory
+          email caddy@localhost.localdomain
+        }
+        {{ exposed_api_domain }} {
+          tls caddy@localhost.localdomain {
+            ciphers TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
+            curves x25519 p384 p256
+          }
+          reverse_proxy http://127.0.0.1:{{ app_conf.wfe2.network.http }}
+        }
+        http://ocsp.{{ exposed_api_domain }} {
+          reverse_proxy http://127.0.0.1:{{ app_conf.ocsp_responder.network.http }}
+        }
