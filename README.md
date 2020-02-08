@@ -24,23 +24,17 @@ This Ansible role handles setting up Boulder, Certificate Transparency log serve
 
    - a CAA record, otherwise Boulder cannot issue certificate to any of your servers.
 
-3. Required Ansible 2.9 and patch with [this commit](https://github.com/ansible/ansible/commit/a0e5e2e4c597c8cf0fdd39c2df45fe33fd38eedb) at the moment otherwise you will encounter failures with `openssl_publickey` module.
+3. Required Ansible 2.9.
 
-   Or you can just run devel.
+4. This role is built with Debian buster in mind, and should have testing apt repo enabled.
 
-4. Install [debops collection through ansible-galaxy](https://galaxy.ansible.com/debops/debops) as this role uses their secret role at the moment.
-
-   I will remove this dependency later.
-
-5. This role currently built with Debian in mind, and should have testing apt repo enabled.
-
-6. Set up a internal DNS resolver:
+5. Set up a internal DNS resolver:
 
    - to keep gRPC clients within Boulder from hard hitting public resolvers, but you should not let this server have unfettered access to internet anyways.
 
    - for Validation Authority to resolve your internal names.
 
-7. Need root access on target machine. Read all the tasks before you run the play.
+6. Need root access on target machine. Read all the tasks before you run the play.
 
 ## Usage
 
@@ -54,7 +48,8 @@ Copy the roles included to your Ansible roles directory, then use as below.
   roles:
     - role: deploy_boulder
       vars:
-        # If you want to modify things in app_conf, you may need to supply the whole dictionary. Or just modify the vars/main.yml...
+        # If you want to modify things in app_conf, you may need to supply
+        # the whole dictionary. Or just modify the vars/main.yml...
         # Vars listed below should be enough for you.
         # Optional. Software install directories.
         install_root: /opt/boulder
@@ -74,7 +69,10 @@ Copy the roles included to your Ansible roles directory, then use as below.
         # Required.
         ca_database_name: ca
         ctlog_database_name: ct
-        # Required. You still need ctlog_shards to define the only tree.
+        # Optional. Set False to avoid overhead of running a full CT log.
+        full_ct_server: True
+        # Required when full_ct_server is True.
+        # You still need ctlog_shards to define the only tree.
         ctlog_sharding: False
         ctlog_shards:
           - prefix: example
@@ -88,7 +86,7 @@ Copy the roles included to your Ansible roles directory, then use as below.
           - 127.0.0.1:53
         # Required for your custom enviornments.
         ca_policies:
-          # Your CAA record should match this value
+          # Your CAA record should match this
           caa_domain: example.com
           valid_duration: 2160h
           # Provided your own or leave this
@@ -115,7 +113,7 @@ Tasks: 131 total,   1 running, 130 sleeping,   0 stopped,   0 zombie
 MiB Mem :   3946.2 total,    191.0 free,    489.7 used,   3265.6 buff/cache
 ```
 
-Since there is no open sourced CT log viewer on the net, you are currently limited to ctclient from certificate-transparency-go to see what cert your CA issued (`**n**` for emphasis):
+Since there is no open sourced CT log viewer on the net, you are currently limited to ctclient from certificate-transparency-go to see what cert your CA issued (`**n**` for emphasis), only available when you run full CT log services:
 
 ```
 /opt/ctgo$ ./ctclient -log_uri http://127.0.0.1:4011/prefix sth
@@ -126,8 +124,6 @@ Signature: Hash=SHA256 Sign=ECDSA Value=...
         Subject: CN=...
         ...
 ```
-
-There is a test CT server comes with boulder that can be configured to use if you don't care about CT, but you need to build it yourself at the moment.
 
 You can use the included `caddy2` role separately, just supply Caddyfile content to `vars.Caddyfile` then you are good to go.
 

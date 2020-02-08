@@ -48,15 +48,19 @@
       login_unix_socket: '{{ db_login_socket }}'
       state: absent
 
-  - name: Adding databases
+  - name: Adding CA database
     mysql_db:
-      name: '{{ item }}'
+      name: '{{ ca_database_name }}'
       login_unix_socket: '{{ db_login_socket }}'
       state: present
-    register: __databases_stats
-    loop:
-      - '{{ ctlog_database_name }}'
-      - '{{ ca_database_name }}'
+
+  - name: Adding CT log database
+    mysql_db:
+      name: '{{ ctlog_database_name }}'
+      login_unix_socket: '{{ db_login_socket }}'
+      state: present
+    register: __ctlog_database_stat
+    when: full_ct_server
 
   - name: Initializing/upgrading CA database
     command:
@@ -74,7 +78,7 @@
       target: '{{ trillian_src_root + "/storage/mysql/schema/storage.sql" }}'
       login_unix_socket: '{{ db_login_socket }}'
       state: import
-    when: __databases_stats.results[0].changed
+    when: full_ct_server and __ctlog_database_stat.changed
 
   - name: Adding CA database users
     mysql_user:
@@ -93,6 +97,7 @@
       priv: '{{ ctlog_database_name }}.*:ALL'
       login_unix_socket: '{{ db_login_socket }}'
       state: present
+    when: full_ct_server
 
   - name: Assigning CA database privileges
     block:

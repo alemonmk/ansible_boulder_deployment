@@ -1,0 +1,53 @@
+---
+  - name: Creating Boulder service account
+    user:
+      name: '{{ ca_svc_user }}'
+      password: '*'
+      shell: /sbin/nologin
+      create_home: no
+      system: yes
+
+  - name: Creating installation directories
+    file:
+      path: '{{ item }}'
+      state: directory
+    loop:
+      - '{{ install_root }}/config'
+      - '{{ install_root }}/config/dburl'
+      - '{{ install_root }}/certs/web'
+      - '{{ install_root }}/certs/grpc'
+      - '{{ ct_install_root }}/config'
+      - '{{ ct_install_root }}/signing_keys'
+      - '{{ trillian_install_root }}/config'
+
+  - name: Cloning Boulder source code
+    git:
+      repo: https://github.com/letsencrypt/boulder.git
+      dest: '{{ src_root }}'
+      version: '{{ current_release }}'
+      force: yes
+    register: __git_result
+
+  - name: Patching with my enhancements
+    patch:
+      basedir: '{{ src_root }}'
+      src: enhancements.patch
+      state: present
+
+  - name: Making Boulder binaries
+    make:
+      chdir: '{{ src_root }}'
+    environment:
+      GOPATH: /usr/local/share/go
+      PATH: /usr/local/share/go/bin:{{ ansible_env.PATH }}
+    when: __git_result.after != __git_result.before
+
+  - name: Moving Boulder binaries
+    copy:
+      dest: '{{ install_root }}/{{ item }}'
+      remote_src: yes
+      src: '{{ src_root }}/bin/{{ item }}'
+      owner: '{{ ca_svc_user }}'
+      group: '{{ ca_svc_user }}'
+      mode: ug=rwx,o=r
+    loop: '{{ boulder_apps }}'

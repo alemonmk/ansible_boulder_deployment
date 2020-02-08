@@ -23,6 +23,24 @@ boulder_apps:
   - block-a-key
   - weak-key-flatten
 
+boulder_services:
+  - boulder-ca
+  - boulder-ra
+  - boulder-sa
+  - boulder-va
+  - boulder-wfe2
+  - boulder-eap2
+  - boulder-janitor
+  - boulder-nonce-provider
+  - boulder-ocsp-responder
+  - boulder-ocsp-updater
+  - boulder-publisher
+
+ctlog_services:
+  - trillian-log
+  - trillian-signer
+  - ct-frontend
+
 trillian_log_server_grpc: 4001
 trillian_log_signer_grpc: 4002
 ctfe_server_http: 4011

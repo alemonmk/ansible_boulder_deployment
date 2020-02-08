@@ -1,6 +1,6 @@
 ---
   - name: Installing systemd services
     template:
-      dest: '/etc/systemd/system/{{ item | basename }}'
-      src: '{{ item }}'
-    loop: '{{ query("fileglob", "../templates/boulder_systemd_units/*.service") }}'
+      dest: '/etc/systemd/system/{{ item }}.service'
+      src: 'boulder_systemd_units/{{ item }}.service'
+    loop: '{{ boulder_services }}'

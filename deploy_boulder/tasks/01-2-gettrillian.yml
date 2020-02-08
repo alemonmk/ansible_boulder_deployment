@@ -1,0 +1,71 @@
+---
+  - name: Creating CT log service account
+    user:
+      name: '{{ ct_svc_user }}'
+      password: '*'
+      shell: /sbin/nologin
+      create_home: no
+      system: yes
+
+  - name: Cloning certificate-transparency-go source code
+    git:
+      repo: https://github.com/google/certificate-transparency-go.git
+      dest: '{{ ct_src_root }}'
+      version: '{{ ct_current_release }}'
+    register: __ct_git_result
+
+  - name: Building certificate-transparency-go binary
+    shell:
+      cmd: go build ./{{ item }}
+      chdir: '{{ ct_src_root }}'
+    loop:
+      - trillian/ctfe/ct_server
+      - client/ctclient
+    register: __result
+    until: __result.rc == 0
+    environment:
+      GOPATH: /usr/local/share/go
+      PATH: /usr/local/share/go/bin:{{ ansible_env.PATH }}
+    when: __ct_git_result.after != __ct_git_result.before
+
+  - name: Moving binary
+    copy:
+      src: '{{ ct_src_root + "/" + item }}'
+      dest: '{{ ct_install_root + "/" + item }}'
+      remote_src: yes
+      owner: '{{ ct_svc_user }}'
+      group: '{{ ct_svc_user }}'
+      mode: ug=rwx,o=r
+    loop:
+      - ct_server
+      - ctclient
+
+  - name: Cloning Trillian source code
+    git:
+      repo: https://github.com/google/trillian.git
+      dest: '{{ trillian_src_root }}'
+      version: '{{ trillian_current_release }}'
+    register: __trillian_git_result
+
+  - name: Building Trillian binaries
+    shell:
+      cmd: 'go build ./cmd/{{ item }}'
+      chdir: '{{ trillian_src_root }}'
+    register: __result
+    until: __result.rc == 0
+    retries: 99999
+    loop: '{{ trillian_apps }}'
+    environment:
+      GOPATH: /usr/local/share/go
+      PATH: /usr/local/share/go/bin:{{ ansible_env.PATH }}
+    when: __trillian_git_result.after != __trillian_git_result.before
+
+  - name: Moving binaries
+    copy:
+      src: '{{ trillian_src_root }}/{{ item }}'
+      dest: '{{ trillian_install_root }}/{{ item }}'
+      remote_src: yes
+      owner: '{{ ct_svc_user }}'
+      group: '{{ ct_svc_user }}'
+      mode: ug=rwx,o=r
+    loop: '{{ trillian_apps }}'

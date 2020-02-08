@@ -10,15 +10,13 @@ trillian_src_root: /opt/trillian-src
 trillian_current_release: master
 
 ca_svc_user: boulder
-ct_svc_user: ctlog
-trillian_log_db_user: ctlog_oper
-
 ca_database_name: ""
-ctlog_database_name: ""
 db_login_socket: /run/mysqld/mysqld.sock
 
-issuing_ca_crtname: ""
-issuing_ca_keyname: ""
+full_ct_server: True
+ct_svc_user: ctlog
+trillian_log_db_user: ctlog_oper
+ctlog_database_name: ""
 
 ctlog_sharding: False
 ctlog_shards:
@@ -26,6 +24,9 @@ ctlog_shards:
     start: 0
     end: 0
     root: '{{ issuing_ca_crtname }}'
+
+issuing_ca_crtname: ""
+issuing_ca_keyname: ""
 
 ca_policies:
   caa_domain: ""

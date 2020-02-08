@@ -31,16 +31,12 @@
       - systemd:
           name: '{{ item }}'
           state: stopped
-        loop: '{{ q("fileglob", "../templates/boulder_systemd_units/*.service") 
-          | map("basename") | list }}'
+        loop: '{{ boulder_services }}'
 
       - systemd:
           name: '{{ item }}'
           state: stopped
-        loop:
-          - trillian-log
-          - trillian-signer
-          - ct-frontend
+        loop: '{{ ctlog_services if full_ct_server else ["boulder-test-ct"] }}'
     ignore_errors: yes
 
   - name: Getting server softwares
@@ -86,6 +82,7 @@
       recurse: yes
       owner: '{{ ct_svc_user }}'
       group: '{{ ct_svc_user }}'
+    when: full_ct_server
 
   - name: Fixing CT log server permissions - protecting private key
     file:
@@ -93,24 +90,21 @@
       state: directory
       recurse: yes
       mode: ug=rwx,o-rwx
+    when: full_ct_server
 
   - name: Starting CT log services
     systemd:
       name: '{{ item }}'
       enabled: yes
       state: started
-    loop:
-      - trillian-log
-      - trillian-signer
-      - ct-frontend
+    loop: '{{ ctlog_services if full_ct_server else ["boulder-test-ct"] }}'
 
   - name: Starting boulder services
     systemd:
       name: '{{ item }}'
       enabled: yes
       state: started
-    loop: '{{ q("fileglob", "../templates/boulder_systemd_units/*.service") 
-      | map("basename") | list }}'
+    loop: '{{ boulder_services }}'
 
   - name: Installing Caddy 2
     include_role:

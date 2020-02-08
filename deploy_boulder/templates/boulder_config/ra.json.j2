@@ -60,7 +60,7 @@
 {% endfor %}
             ],
 {% else %}
-            "uri": "http://127.0.0.1:{{ ctfe_server_http }}/{{ ctlog_shards[0].prefix }}",
+            "uri": "http://127.0.0.1:{{ ctfe_server_http }}/{{ ctlog_shards[0].prefix if full_ct_server else "" }}",
             "key": "@@TOBEREPLACED@@",
 {% endif %}
             "submitFinalCert": true
