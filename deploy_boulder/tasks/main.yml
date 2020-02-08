@@ -1,4 +1,26 @@
 ---
+  - name: Ensuring directories for secret materials exist
+    block:
+      - set_fact:
+          secret: '{{ inventory_dir | realpath + "../secrets/" }}'
+        when: secret is not defined
+
+      - file:
+          path: '{{ secret + "/" + item }}'
+          state: directory
+        loop:
+          - credentials
+          - 'certificates/{{ ansible_fqdn }}/grpc'
+          - 'certificates/{{ ansible_fqdn }}/issuing'
+          - 'certificates/{{ ansible_fqdn }}/ctlog'
+
+  - name: Checking if issuing CA materials exist
+    file:
+      path: '{{ secret + "/certificates/" + ansible_fqdn + "/issuing/" + issuing_ca_keyname }}'
+      state: file
+    register: ca_priv
+    failed_when: (not ca_priv | length) or (not ca_priv.exists)
+
   - name: Installing golang from testing
     apt:
       name: golang

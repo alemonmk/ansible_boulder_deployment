@@ -16,6 +16,8 @@ This Ansible role handles setting up Boulder, Certificate Transparency log serve
 
    It's my choice since I want full control of issuing CA subject, and I have an existing root CA, otherwise I would use `step-ca`.
 
+   You need to place them in a secret folder. This secret folder will be created when you first run this role, or you can create `../secrets/$(target hostname)/issuing` anywhere, and supply the absolute path as a var named `secret` to this role.
+
 2. Set up DNS records:
 
    - sub domain names that serve ACME and OCSP requests, and
@@ -50,16 +52,6 @@ Copy the roles included to your Ansible roles directory, then use as below.
   host: localhost
   
   roles:
-    - role: debops.debops.secret
-      vars:
-        secret__directories:
-        # These directories are required.
-        # If you are not using this role and supply your own `secret` path to
-        # this role, you need these folders created.
-          - credentials
-          - 'certificates/{{ ansible_fqdn }}/grpc'
-          - 'certificates/{{ ansible_fqdn }}/issuing'
-          - 'certificates/{{ ansible_fqdn }}/ctlog'
     - role: deploy_boulder
       vars:
         # If you want to modify things in app_conf, you may need to supply the whole dictionary. Or just modify the vars/main.yml...
