@@ -92,19 +92,21 @@ Copy the roles included to your Ansible roles directory, then use as below.
           - 127.0.0.1:53
         # Required for your custom enviornments.
         ca_policies:
-          # Your CAA record should match this
+          # Required.
+          # Your CAA record should match this.
           caa_domain: example.com
           valid_duration: 2160h
           # Provided your own or leave this
           cp_oid: 2.5.29.32.0
-          # You may need to host CPS elsewhere or
+          # Set to where you're hosting OCSP responder
+          ocsp_domain: ocsp.pki.example.com
+          # Optional.
+          # You may need to host CPS and ToS elsewhere or
           # you will need to modify Caddyfile
-          # You can leave this empty or omit as well
           cps_url: http://pki.example.com/cps
           cp_usernotice:
-          # Required, set to where you're hosting OCSP responder
-          ocsp_domain: ocsp.pki.example.com
-        # Required, set to where you're hosting the ACME endpoints
+          tos_url: http://pki.examples.com/tos
+        # Required. set to where you're hosting the ACME endpoints
         api_domain: pki.example.com
         company_homepage: example.com
 ```

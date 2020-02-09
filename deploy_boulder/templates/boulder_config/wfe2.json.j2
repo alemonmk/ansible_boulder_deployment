@@ -13,7 +13,7 @@
     "blockedKeyFile": "config/blocked_keys.yml",
     "shutdownStopTimeout": "10s",
     "debugAddr": "127.0.0.1:9996",
-    "subscriberAgreementURL": "https://{{ exposed_api_domain }}/terms/v1",
+    "subscriberAgreementURL": "{{ ca_policies.tos_url | d("") }}",
     "acceptRevocationReason": true,
     "allowAuthzDeactivation": true,
     "directoryCAAIdentity": "{{ ca_policies.caa_domain }}",
