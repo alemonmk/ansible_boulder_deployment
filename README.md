@@ -16,7 +16,7 @@ This Ansible role handles setting up Boulder, Certificate Transparency log serve
 
    It's my choice since I want full control of issuing CA subject, and I have an existing root CA, otherwise I would use `step-ca`.
 
-   You need to place them in a secret folder. This secret folder will be created when you first run this role, or you can create `../secrets/$(target hostname)/issuing` anywhere, and supply the absolute path as a var named `secret` to this role.
+   You need to place them in a secret folder. This secret folder will be created when you first run this role, or you can create the hierarchy `secrets/$(target hostname)/issuing` anywhere, and supply the absolute path as a var named `secret` to this role.
 
 2. Set up DNS records:
 
@@ -32,15 +32,15 @@ This Ansible role handles setting up Boulder, Certificate Transparency log serve
 
 3. Required Ansible 2.9.
 
-4. This role is built with Debian buster in mind, and should have testing apt repo enabled.
+4. This role is built with Debian buster in mind, and requires testing apt repo enabled.
 
-5. Set up a internal DNS resolver:
+5. Set up a internal DNS server:
 
    - to keep gRPC clients within Boulder from hard hitting public resolvers, but you should not let this server have unfettered access to internet anyways.
 
    - for Validation Authority to resolve your internal names.
 
-6. Need root access on target machine. Read all the tasks before you run the play.
+6. Need root access on target machine, so read all the tasks before you run the play.
 
 ## Usage
 
@@ -108,10 +108,11 @@ Copy the roles included to your Ansible roles directory, then use as below.
           tos_url: http://pki.examples.com/tos
         # Required. set to where you're hosting the ACME endpoints
         api_domain: pki.example.com
+        # Optional. This is meta.website in the ACME directory
         company_homepage: example.com
 ```
 
-Have a look in $(install_root)/config/*.yml for more control of issuing policy.
+Have a look in `$(install_root)/config/*.yml` for more control of issuing policy.
 
 ## Other words
 
