@@ -120,8 +120,8 @@
             ciphers TLS_ECDHE_ECDSA_WITH_CHACHA20_POLY1305_SHA256 TLS_ECDHE_ECDSA_WITH_AES_256_GCM_SHA384
             curves x25519 p384 p256
           }
-          reverse_proxy http://127.0.0.1:{{ app_conf.wfe2.network.http }}
+          reverse_proxy 127.0.0.1:{{ app_conf.wfe2.network.http }}
         }
         http://ocsp.{{ exposed_api_domain }} {
-          reverse_proxy http://127.0.0.1:{{ app_conf.ocsp_responder.network.http }}
+          reverse_proxy 127.0.0.1:{{ app_conf.ocsp_responder.network.http }}
         }
