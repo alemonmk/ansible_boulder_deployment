@@ -17,7 +17,7 @@
     "acceptRevocationReason": true,
     "allowAuthzDeactivation": true,
     "directoryCAAIdentity": "{{ ca_policies.caa_domain }}",
-    "directoryWebsite": "{{ company_homepage }}",
+    "directoryWebsite": "{{ company_homepage | d("") }}",
     "legacyKeyIDPrefix": "",
     "tls": {
       "caCertFile": "certs/grpc/ca.crt",

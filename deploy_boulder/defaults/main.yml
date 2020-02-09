@@ -39,4 +39,4 @@ ca_policies:
 va_resolver: 0.0.0.0:53
 
 api_domain: pki.example.com
-company_homepage: https://example.com
+company_homepage: ""
