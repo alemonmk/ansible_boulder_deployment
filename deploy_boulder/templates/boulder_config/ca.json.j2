@@ -49,9 +49,9 @@
             "backdate": "1h",
             "ca_constraint": { "is_ca": false },
             "issuer_urls": [
-              "http://{{ exposed_api_domain }}/acme/issuer-cert"
+              "https://{{ api_domain }}/acme/issuer-cert"
             ],
-            "ocsp_url": "http://ocsp.{{ exposed_api_domain }}",
+            "ocsp_url": "http://{{ ca_policies.ocsp_domain }}",
             "crl_url": "",
             "expiry": "{{ ca_policies.valid_duration }}",
             "policies": [
@@ -96,9 +96,9 @@
             "backdate": "1h",
             "ca_constriant": { "is_ca": false },
             "issuer_urls": [
-              "http://{{ exposed_api_domain }}/acme/issuer-cert"
+              "https://{{ api_domain }}/acme/issuer-cert"
             ],
-            "ocsp_url": "http://ocsp.{{ exposed_api_domain }}",
+            "ocsp_url": "http://{{ ca_policies.ocsp_domain }}",
             "crl_url": "",
             "expiry": "{{ ca_policies.valid_duration }}",
             "policies": [

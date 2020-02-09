@@ -28,7 +28,8 @@
 {% endfor %}
     },
     "accountURIPrefixes": [
-      "http://{{ exposed_api_domain }}/acme/acct"
+      "https://{{ api_domain }}/acme/acct",
+      "http://127.0.0.1:{{ app_conf.wfe2.network.http }}/acme/acct"
     ]
   },
 

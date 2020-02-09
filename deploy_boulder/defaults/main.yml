@@ -34,8 +34,9 @@ ca_policies:
   cp_oid: 2.5.29.32.0
   cps_url: ""
   cp_usernotice: ""
+  ocsp_domain: ocsp.{{ api_domain }}
 
 va_resolver: 0.0.0.0:53
 
-exposed_api_domain: pki.example.com
+api_domain: pki.example.com
 company_homepage: https://example.com

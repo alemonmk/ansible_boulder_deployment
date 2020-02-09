@@ -20,7 +20,13 @@ This Ansible role handles setting up Boulder, Certificate Transparency log serve
 
 2. Set up DNS records:
 
-   - sub domain names that serve ACME and OCSP requests, and
+   - sub domain names that serve ACME and OCSP requests, for example:
+
+     - `pki.example.com` to serve ACME,
+
+     - `ocsp.pki.example.com` to OCSP.
+
+     and set `api_domain` as the ACME domain name, `ca_policies.ocsp_domain` as the OCSP domain name.
 
    - a CAA record, otherwise Boulder cannot issue certificate to any of your servers.
 
@@ -96,7 +102,10 @@ Copy the roles included to your Ansible roles directory, then use as below.
           # You can leave this empty or omit as well
           cps_url: http://pki.example.com/cps
           cp_usernotice:
-        exposed_api_domain: pki.example.com
+          # Required, set to where you're hosting OCSP responder
+          ocsp_domain: ocsp.pki.example.com
+        # Required, set to where you're hosting the ACME endpoints
+        api_domain: pki.example.com
         company_homepage: example.com
 ```
 
