@@ -1,6 +1,6 @@
 ---
   - name: Getting boulder
-    include_tasks: 01-1-boulder.yml
+    include_tasks: 01-1-getboulder.yml
 
   - name: Getting full-fledged CT server
     include_tasks: 01-2-gettrillian.yml
