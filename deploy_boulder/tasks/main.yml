@@ -16,11 +16,14 @@
         delegate_to: 127.0.0.1
 
   - name: Checking if issuing CA materials exist
-    file:
+    stat:
       path: '{{ secret + "/certificates/" + ansible_fqdn + "/issuing/" + issuing_ca_keyname }}'
-      state: file
     register: ca_priv
-    failed_when: (not ca_priv | length) or (not ca_priv.exists)
+    delegate_to: 127.0.0.1
+
+  - fail:
+      msg: Issuing CA material does not exist!
+    when: not ca_priv.stat.exists
 
   - name: Installing golang from testing
     apt:
