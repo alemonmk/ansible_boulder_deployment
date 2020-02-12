@@ -43,7 +43,7 @@
       }
     },
     "certificateChains": {
-      "https://{{ api_domain }}/acme/issuer-cert": ["certs/web/{{ issuing_ca_crtname }}"],
+      "http://{{ api_domain }}/acme/issuer-cert": ["certs/web/{{ issuing_ca_crtname }}"],
       "http://127.0.0.1:{{ app_conf.wfe2.network.http }}/acme/issuer-cert": ["certs/web/{{ issuing_ca_crtname }}"]
     },
     "features": {
