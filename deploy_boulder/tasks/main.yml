@@ -2,7 +2,7 @@
   - name: Ensuring directories for secret materials exist
     block:
       - set_fact:
-          secret: '{{ inventory_dir | realpath + "../secrets/" }}'
+          secret: '{{ (inventory_dir + "/../secrets/") | realpath }}'
         when: secret is not defined
 
       - file:
@@ -13,6 +13,7 @@
           - 'certificates/{{ ansible_fqdn }}/grpc'
           - 'certificates/{{ ansible_fqdn }}/issuing'
           - 'certificates/{{ ansible_fqdn }}/ctlog'
+        delegate_to: 127.0.0.1
 
   - name: Checking if issuing CA materials exist
     file:
