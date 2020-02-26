@@ -1,7 +1,7 @@
 ---
 install_root: /opt/boulder
 src_root: /opt/boulder-src
-current_release: release-2020-02-03
+current_release: tags/release-2020-02-17
 ct_install_root: /opt/ctgo
 ct_src_root: /opt/ctgo-src
 ct_current_release: tags/v1.1.0

@@ -206,20 +206,6 @@ index b0089d64..fc0a16dc 100644
  func (updater *OCSPUpdater) tick() {
  	start := updater.clk.Now()
  	err := updater.updateOCSPResponses(context.Background(), updater.batchSize)
-@@ -405,11 +382,11 @@ func (updater *OCSPUpdater) tick() {
-        took := end.Sub(start)
-        long, state := "false", "success"
-        if took > updater.tickWindow {
-                long = "true"
-        }
--       sleepDur := end.Sub(start.Add(updater.tickWindow))
-+       sleepDur := start.Add(updater.tickWindow).Sub(end)
-        if err != nil {
-                state = "failed"
-                updater.tickFailures++
-                sleepDur = core.RetryBackoff(
-                        updater.tickFailures,
-
 @@ -452,19 +429,18 @@ func main() {
  
  	// Collect and periodically report DB metrics using the DBMap and prometheus stats.
