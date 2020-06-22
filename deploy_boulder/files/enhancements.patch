@@ -1,5 +1,5 @@
 diff --git ca/ca.go ca/ca.go
-index 5a0bebb2..eae89d01 100644
+index c7044c72..be465a05 100644
 --- ca/ca.go
 +++ ca/ca.go
 @@ -173,11 +173,20 @@ func makeInternalIssuers(
@@ -25,7 +25,7 @@ index 5a0bebb2..eae89d01 100644
  
  		cn := iss.Cert.Subject.CommonName
 diff --git cmd/boulder-ra/main.go cmd/boulder-ra/main.go
-index 535b3035..a543b9e9 100644
+index 61cbabba..05f12648 100644
 --- cmd/boulder-ra/main.go
 +++ cmd/boulder-ra/main.go
 @@ -5,11 +5,10 @@ import (
@@ -68,7 +68,7 @@ index 535b3035..a543b9e9 100644
  	cmd.FailOnError(err, "Failed to load issuer certificate")
  
  	// Boulder's components assume that there will always be CT logs configured.
-@@ -224,11 +218,10 @@ func main() {
+@@ -228,11 +222,10 @@ func main() {
  		pendingAuthorizationLifetime,
  		pubc,
  		caaClient,
@@ -81,7 +81,7 @@ index 535b3035..a543b9e9 100644
  	policyErr := rai.SetRateLimitPoliciesFile(c.RA.RateLimitPoliciesFilename)
  	cmd.FailOnError(policyErr, "Couldn't load rate limit policies file")
 diff --git cmd/ocsp-updater/main.go cmd/ocsp-updater/main.go
-index b0089d64..fc0a16dc 100644
+index a3fc05c2..1f4baf6e 100644
 --- cmd/ocsp-updater/main.go
 +++ cmd/ocsp-updater/main.go
 @@ -9,11 +9,10 @@ import (
@@ -228,10 +228,10 @@ index b0089d64..fc0a16dc 100644
  		logger,
  	)
 diff --git ra/ra.go ra/ra.go
-index fbdf7a4b..72eab6da 100644
+index 23445de9..eb9dd9c0 100644
 --- ra/ra.go
 +++ ra/ra.go
-@@ -13,12 +13,10 @@ import (
+@@ -12,12 +12,10 @@ import (
  	"strconv"
  	"strings"
  	"time"
@@ -244,7 +244,7 @@ index fbdf7a4b..72eab6da 100644
  	corepb "github.com/letsencrypt/boulder/core/proto"
  	csrlib "github.com/letsencrypt/boulder/csr"
  	"github.com/letsencrypt/boulder/ctpolicy"
-@@ -74,11 +72,10 @@ type RegistrationAuthorityImpl struct {
+@@ -75,11 +73,10 @@ type RegistrationAuthorityImpl struct {
  	forceCNFromSAN               bool
  	reuseValidAuthz              bool
  	orderLifetime                time.Duration
@@ -256,7 +256,7 @@ index fbdf7a4b..72eab6da 100644
  
  	ctpolicyResults         *prometheus.HistogramVec
  	rateLimitCounter        *prometheus.CounterVec
-@@ -103,11 +100,10 @@ func NewRegistrationAuthorityImpl(
+@@ -104,11 +101,10 @@ func NewRegistrationAuthorityImpl(
  	pendingAuthorizationLifetime time.Duration,
  	pubc core.Publisher,
  	caaClient caaChecker,
@@ -268,7 +268,7 @@ index fbdf7a4b..72eab6da 100644
  	ctpolicyResults := prometheus.NewHistogramVec(
  		prometheus.HistogramOpts{
  			Name:    "ctpolicy_results",
-@@ -175,11 +171,10 @@ func NewRegistrationAuthorityImpl(
+@@ -176,11 +172,10 @@ func NewRegistrationAuthorityImpl(
  		publisher:                    pubc,
  		caa:                          caaClient,
  		orderLifetime:                orderLifetime,
@@ -280,26 +280,12 @@ index fbdf7a4b..72eab6da 100644
  		rateLimitCounter:             rateLimitCounter,
  		newRegCounter:                newRegCounter,
  		reusedValidAuthzCounter:      reusedValidAuthzCounter,
-@@ -1691,12 +1686,12 @@ func revokeEvent(state, serial, cn string, names []string, revocationCode revoca
- 		names,
- 		revocation.ReasonToString[revocationCode],
- 	)
- }
- 
--// revokeCertificate generates a revoked OCSP response for the given certificate, stores
--// the revocation information, and purges OCSP request URLs from Akamai.
-+// revokeCertificate generates a revoked OCSP response for the given certificate and
-+// stores the revocation information.
- func (ra *RegistrationAuthorityImpl) revokeCertificate(ctx context.Context, cert x509.Certificate, code revocation.Reason) error {
- 	status := string(core.OCSPStatusRevoked)
- 	reason := int32(code)
- 	revokedAt := time.Now().UnixNano()
- 	ocspResponse, err := ra.CA.GenerateOCSP(ctx, &caPB.GenerateOCSPRequest{
-@@ -1719,18 +1714,10 @@ func (ra *RegistrationAuthorityImpl) revokeCertificate(ctx context.Context, cert
- 		Response: ocspResponse.Response,
- 	})
- 	if err != nil {
- 		return err
+@@ -1694,18 +1689,10 @@ func (ra *RegistrationAuthorityImpl) revokeCertificate(ctx context.Context, cert
+		}
+		if _, err = ra.SA.AddBlockedKey(ctx, req); err != nil {
+				return err
+		}
+
  	}
 -	purgeURLs, err := akamai.GeneratePurgeURLs(cert.Raw, ra.issuer)
 -	if err != nil {
