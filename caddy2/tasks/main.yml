@@ -8,9 +8,10 @@
       system: yes
 
   - name: Getting Caddy 2
-    get_url:
+    unarchive:
       url: '{{ caddy_bin_url }}'
-      dest: '{{ caddy_install_root }}/caddy'
+      remote_src: yes
+      dest: '{{ caddy_install_root }}'
       owner: '{{ caddy_user }}'
       group: '{{ caddy_user }}'
       mode: u=rwx,go=rx

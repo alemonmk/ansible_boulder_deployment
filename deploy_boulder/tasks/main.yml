@@ -120,9 +120,7 @@
           email caddy@localhost.localdomain
         }
         {{ api_domain }} {
-          reverse_proxy 127.0.0.1:{{ app_conf.wfe2.network.http }} {
-            header_up X-Forwarded-Proto {http.request.scheme}
-          }
+          reverse_proxy 127.0.0.1:{{ app_conf.wfe2.network.http }}
         }
         http://{{ ca_policies.ocsp_domain }} {
           reverse_proxy 127.0.0.1:{{ app_conf.ocsp_responder.network.http }}
