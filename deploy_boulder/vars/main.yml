@@ -20,7 +20,6 @@ boulder_apps:
   - admin-revoker
   - boulder-janitor
   - expired-authz-purger2
-  - block-a-key
 
 boulder_services:
   - boulder-ca
