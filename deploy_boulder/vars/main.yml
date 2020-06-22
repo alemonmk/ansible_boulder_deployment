@@ -57,8 +57,6 @@ app_conf:
     network:
       grpc: 3511
     features:
-      CheckRenewalFirst: true
-      ParallelCheckFailedValidation: false
       V1DisableNewValidations: true
   va:
     network:
@@ -74,9 +72,7 @@ app_conf:
       grpc: 3521
     db_user: boulder_sasvc
     features:
-      DeleteUnusedChallenges: true
       StoreIssuerInfo: true
-      WriteIssuedNamesPrecert: false
   publisher:
     network:
       grpc: 3512
@@ -88,8 +84,6 @@ app_conf:
       http: 3601
       https: 0
     features:
-      HeadNonceStatusOK: true
-      RemoveWFE2AccountID: true
       StripDefaultSchemePort: true
       MandatoryPOSTAsGET: true
       PrecertificateRevocation: true
