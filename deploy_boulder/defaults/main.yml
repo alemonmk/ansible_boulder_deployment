@@ -1,13 +1,13 @@
 ---
 install_root: /opt/boulder
 src_root: /opt/boulder-src
-current_release: tags/release-2020-02-17
+current_release: tags/release-2020-06-18
 ct_install_root: /opt/ctgo
 ct_src_root: /opt/ctgo-src
 ct_current_release: tags/v1.1.0
 trillian_install_root: /opt/trillian
 trillian_src_root: /opt/trillian-src
-trillian_current_release: master
+trillian_current_release: tags/v1.3.7
 
 ca_svc_user: boulder
 ca_database_name: ""

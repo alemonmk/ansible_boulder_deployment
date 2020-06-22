@@ -11,8 +11,11 @@ GRANT SELECT,INSERT ON requestedNames TO '{{ app_conf.sa.db_user }}'@'127.0.0.1'
 GRANT SELECT,INSERT,DELETE ON orderFqdnSets TO '{{ app_conf.sa.db_user }}'@'127.0.0.1';
 GRANT SELECT,INSERT,UPDATE ON authz2 TO '{{ app_conf.sa.db_user }}'@'127.0.0.1';
 GRANT SELECT,INSERT ON orderToAuthz2 TO '{{ app_conf.sa.db_user }}'@'127.0.0.1';
-GRANT INSERT,SELECT ON serials TO '{{ app_conf.sa.db_user }}'@'127.0.0.1';
+GRANT SELECT,INSERT ON serials TO '{{ app_conf.sa.db_user }}'@'127.0.0.1';
 GRANT SELECT,INSERT ON precertificates TO '{{ app_conf.sa.db_user }}'@'127.0.0.1';
+GRANT SELECT,INSERT ON keyHashToSerial TO '{{ app_conf.sa.db_user }}'@'127.0.0.1';
+GRANT SELECT,INSERT ON blockedKeys TO '{{ app_conf.sa.db_user }}'@'127.0.0.1';
+GRANT SELECT,INSERT,UPDATE ON newOrdersRL TO '{{ app_conf.sa.db_user }}'@'127.0.0.1';
 
 -- OCSP Responder
 GRANT SELECT ON certificateStatus TO '{{ app_conf.ocsp_responder.db_user }}'@'127.0.0.1';
